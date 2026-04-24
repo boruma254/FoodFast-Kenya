@@ -7,7 +7,6 @@
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTabletMode": true,
       "bundleIdentifier": "com.foodfast.kenya"
     },
     "android": {
