@@ -1,120 +1,72 @@
-import { Link, router } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useFoodStore } from "../store/useFoodStore";
+import { colors, ms, radius, shadow, spacing, type } from "./ui/theme";
 
 export default function CheckoutScreen() {
   const cart = useFoodStore((state) => state.cart);
-  const deliveryAddress = useFoodStore((state) => state.deliveryAddress);
-  const mealInstructions = useFoodStore((state) => state.mealInstructions);
   const checkoutCart = useFoodStore((state) => state.checkoutCart);
-  const activeOrder = useFoodStore((state) =>
-    state.orders.find((order) => order.status !== "Delivered")
-  );
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  if (cart.length === 0) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Checkout</Text>
-        <Text style={styles.body}>Your cart is empty. Add meals first.</Text>
-        <Link href="/menu" style={styles.link}>
-          Browse Menu
-        </Link>
-      </View>
-    );
-  }
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const deliveryFee = 2.99;
+  const tax = subtotal * 0.08;
+  const total = subtotal + deliveryFee + tax;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Checkout</Text>
-      <View style={styles.card}>
-        <Text style={styles.label}>Items: {cart.length}</Text>
-        <Text style={styles.label}>Total: KES {total}</Text>
-        <Text style={styles.label}>Address: {deliveryAddress || "Not set"}</Text>
-        <Text style={styles.label}>
-          Instructions: {mealInstructions.trim() || "None"}
-        </Text>
-      </View>
+    <SafeAreaView style={styles.page}>
+      <View style={styles.shell}>
+        <View style={styles.header}><Pressable onPress={() => router.back()}><Ionicons name="arrow-back" size={22} color="#fff" /></Pressable><Text style={styles.headerTitle}>Payment</Text></View>
+        <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 30 }}>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Order Summary</Text>
+            <View style={styles.row}><Text style={styles.gray}>1x {cart[0]?.name ?? "Classic Burger"}</Text><Text style={styles.gray}>${subtotal.toFixed(2)}</Text></View>
+          </View>
 
-      <Pressable
-        style={[
-          styles.button,
-          (!deliveryAddress.trim() || Boolean(activeOrder)) ? styles.buttonDisabled : undefined,
-        ]}
-        onPress={() => {
-          if (!deliveryAddress.trim()) {
-            Alert.alert(
-              "Address required",
-              "Please set your delivery address on Home before placing order."
-            );
-            return;
-          }
-          if (activeOrder) {
-            Alert.alert(
-              "Order in progress",
-              "You can only place one order at a time until current order is delivered."
-            );
-            return;
-          }
-          checkoutCart();
-          router.replace("/order-tracking");
-        }}
-        disabled={!deliveryAddress.trim() || Boolean(activeOrder)}
-      >
-        <Text style={styles.buttonText}>Place Order</Text>
-      </Pressable>
-    </View>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Payment Method</Text>
+            <View style={[styles.method, styles.methodActive]}><Text style={styles.methodText}>Credit/Debit Card</Text><Ionicons name="checkmark-circle" size={18} color="#16A34A" /></View>
+            <View style={styles.method}><Text style={styles.methodText}>Digital Wallet</Text></View>
+            <View style={styles.method}><Text style={styles.methodText}>Cash on Delivery</Text></View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Card Details</Text>
+            <Text style={styles.inputLabel}>Card Number</Text>
+            <TextInput style={styles.input} placeholder="1234 5678 9012 3456" placeholderTextColor="#9CA3AF" />
+            <Text style={styles.inputLabel}>Cardholder Name</Text>
+            <TextInput style={styles.input} placeholder="John Doe" placeholderTextColor="#9CA3AF" />
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <View style={styles.row}><Text style={styles.gray}>Subtotal</Text><Text style={styles.gray}>${subtotal.toFixed(2)}</Text></View>
+          <View style={styles.row}><Text style={styles.gray}>Delivery Fee</Text><Text style={styles.gray}>${deliveryFee.toFixed(2)}</Text></View>
+          <View style={styles.row}><Text style={styles.gray}>Tax (8%)</Text><Text style={styles.gray}>${tax.toFixed(2)}</Text></View>
+          <View style={styles.row}><Text style={styles.total}>Total</Text><Text style={styles.total}>${total.toFixed(2)}</Text></View>
+          <Pressable style={styles.payBtn} onPress={() => { checkoutCart(); router.replace("/order-tracking"); }}><Text style={styles.payText}>Pay ${total.toFixed(2)}</Text></Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-    padding: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  body: {
-    color: "#4B5563",
-    fontSize: 15,
-    marginBottom: 10,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 14,
-    gap: 6,
-  },
-  label: {
-    color: "#374151",
-    fontSize: 14,
-  },
-  button: {
-    backgroundColor: "#16A34A",
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    backgroundColor: "#9CA3AF",
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  link: {
-    color: "#DC2626",
-    fontWeight: "700",
-    marginTop: 4,
-  },
+  page: { flex: 1, backgroundColor: colors.surface },
+  shell: { flex: 1, margin: 0, borderRadius: 0, backgroundColor: colors.surface, overflow: "hidden" },
+  header: { height: ms(56), backgroundColor: colors.brand, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.md },
+  headerTitle: { color: colors.white, fontSize: type.h2, fontWeight: "900", letterSpacing: ms(-0.2) },
+  card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md, ...shadow.card },
+  cardTitle: { fontSize: type.h3, fontWeight: "900", marginBottom: spacing.sm, color: colors.text },
+  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xs },
+  gray: { color: colors.muted, fontSize: type.bodySm, fontWeight: "600" },
+  method: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, flexDirection: "row", justifyContent: "space-between", backgroundColor: "#F9FAFB" },
+  methodActive: { borderColor: colors.success, backgroundColor: "#ECFDF5" },
+  methodText: { fontSize: type.body, fontWeight: "800", color: colors.text },
+  inputLabel: { color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.xs, fontSize: type.bodySm, fontWeight: "700" },
+  input: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: ms(10), marginBottom: spacing.sm, backgroundColor: colors.white, fontSize: type.body },
+  footer: { borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.card, padding: spacing.md },
+  total: { fontSize: type.h3, fontWeight: "900", color: colors.text },
+  payBtn: { marginTop: spacing.sm, backgroundColor: colors.brand, borderRadius: radius.xl, alignItems: "center", paddingVertical: spacing.sm, ...shadow.card },
+  payText: { color: colors.white, fontWeight: "900", fontSize: type.body },
 });

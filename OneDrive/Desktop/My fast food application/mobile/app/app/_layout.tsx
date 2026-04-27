@@ -6,19 +6,21 @@ export default function RootLayout() {
     <>
       <Stack
         screenOptions={{
-          headerTitleAlign: "center",
+          headerShown: false,
+          contentStyle: { backgroundColor: "#F3F4F6" },
         }}
       >
-        <Stack.Screen name="index" options={{ title: "FoodFast Kenya" }} />
-        <Stack.Screen name="menu" options={{ title: "Menu" }} />
-        <Stack.Screen name="cart" options={{ title: "Cart" }} />
-        <Stack.Screen name="checkout" options={{ title: "Checkout" }} />
-        <Stack.Screen name="order-tracking" options={{ title: "Order Tracking" }} />
-        <Stack.Screen name="orders" options={{ title: "My Orders" }} />
-        <Stack.Screen name="profile" options={{ title: "Profile" }} />
-        <Stack.Screen name="messages" options={{ title: "Messages" }} />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="home" />
+        <Stack.Screen name="menu" />
+        <Stack.Screen name="cart" />
+        <Stack.Screen name="checkout" />
+        <Stack.Screen name="order-tracking" />
+        <Stack.Screen name="orders" />
+        <Stack.Screen name="profile" />
       </Stack>
-      <StatusBar style="dark" />
+      <StatusBar style="dark" translucent={false} backgroundColor="#F3F4F6" />
     </>
   );
 }

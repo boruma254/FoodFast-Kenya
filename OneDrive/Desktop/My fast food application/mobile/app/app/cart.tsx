@@ -1,276 +1,84 @@
-import { Link, router } from "expo-router";
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFoodStore } from "../store/useFoodStore";
+import { colors, ms, radius, shadow, spacing, type } from "./ui/theme";
 
 export default function CartScreen() {
   const cart = useFoodStore((state) => state.cart);
   const addToCart = useFoodStore((state) => state.addToCart);
   const decreaseCartItem = useFoodStore((state) => state.decreaseCartItem);
   const removeFromCart = useFoodStore((state) => state.removeFromCart);
-  const checkoutCart = useFoodStore((state) => state.checkoutCart);
-  const deliveryAddress = useFoodStore((state) => state.deliveryAddress);
-  const mealInstructions = useFoodStore((state) => state.mealInstructions);
-  const setMealInstructions = useFoodStore((state) => state.setMealInstructions);
-  const activeOrder = useFoodStore((state) =>
-    state.orders.find((order) => order.status !== "Delivered")
-  );
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const deliveryFee = 2.99;
+  const total = subtotal + deliveryFee;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Your Cart</Text>
+    <SafeAreaView style={styles.page}>
+      <View style={styles.shell}>
+        <View style={styles.header}><Pressable onPress={() => router.back()}><Ionicons name="arrow-back" size={22} color="#fff" /></Pressable><Text style={styles.headerTitle}>Your Cart</Text></View>
 
-      {cart.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <Text style={styles.emptyText}>Your cart is empty.</Text>
-          <Link href="/menu" style={styles.link}>
-            Browse menu
-          </Link>
-        </View>
-      ) : (
-        <>
-          <FlatList
-            data={cart}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <View style={styles.topLine}>
+        {cart.length > 0 ? (
+          <ScrollView contentContainerStyle={{ paddingBottom: spacing.sm }}>
+            {cart.map((item) => (
+              <View key={item.id} style={styles.itemCard}>
+                <Image source={{ uri: item.image }} style={styles.image} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
                   <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemPrice}>KES {item.price * item.quantity}</Text>
+                  <Text style={styles.itemRestaurant}>{item.restaurantName}</Text>
+                  <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                  <View style={styles.qtyRow}>
+                    <Pressable onPress={() => decreaseCartItem(item.id)}><Text style={styles.qtyBtn}>-</Text></Pressable>
+                    <Text style={styles.qty}>{item.quantity}</Text>
+                    <Pressable onPress={() => addToCart(item)}><Text style={styles.qtyBtn}>+</Text></Pressable>
+                  </View>
                 </View>
-                <Text style={styles.meta}>
-                  {item.quantity} x KES {item.price}
-                </Text>
-
-                <View style={styles.actionsRow}>
-                  <Pressable
-                    style={styles.smallButton}
-                    onPress={() => decreaseCartItem(item.id)}
-                  >
-                    <Text style={styles.smallButtonText}>-</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.smallButton}
-                    onPress={() => addToCart(item)}
-                  >
-                    <Text style={styles.smallButtonText}>+</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.removeButton}
-                    onPress={() => removeFromCart(item.id)}
-                  >
-                    <Text style={styles.removeButtonText}>Remove</Text>
-                  </Pressable>
+                <View style={{ alignItems: "flex-end", justifyContent: "space-between" }}>
+                  <Pressable onPress={() => removeFromCart(item.id)}><Ionicons name="trash-outline" size={18} color="#EF4444" /></Pressable>
+                  <Text style={styles.itemPrice}>${(item.quantity * item.price).toFixed(2)}</Text>
                 </View>
               </View>
-            )}
-            ListFooterComponent={
-              <View style={styles.instructionsCard}>
-                <Text style={styles.instructionsTitle}>Meal instructions</Text>
-                <TextInput
-                  value={mealInstructions}
-                  onChangeText={setMealInstructions}
-                  placeholder="E.g. No onions, extra spicy, well done..."
-                  placeholderTextColor="#9CA3AF"
-                  multiline
-                  style={styles.instructionsInput}
-                />
-              </View>
-            }
-          />
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={styles.empty}><Text style={styles.emptyText}>Your cart is empty</Text></View>
+        )}
 
+        {cart.length > 0 ? (
           <View style={styles.footer}>
-            <Text style={styles.total}>Total: KES {total}</Text>
-            <Text style={styles.addressLine}>
-              Address: {deliveryAddress || "Not set"}
-            </Text>
-            {activeOrder ? (
-              <Text style={styles.activeOrderWarning}>
-                Active order {activeOrder.id} is still in progress. You can place a new order
-                after it is delivered.
-              </Text>
-            ) : null}
-            <Pressable
-              style={[
-                styles.checkoutButton,
-                activeOrder ? styles.checkoutButtonDisabled : undefined,
-              ]}
-              onPress={() => {
-                if (activeOrder) {
-                  Alert.alert(
-                    "Order in progress",
-                    "You can only place one order at a time until the current one is delivered."
-                  );
-                  return;
-                }
-                router.push("/checkout");
-              }}
-              disabled={Boolean(activeOrder)}
-            >
-              <Text style={styles.checkoutText}>Proceed to Checkout</Text>
-            </Pressable>
+            <View style={styles.row}><Text style={styles.label}>Subtotal</Text><Text style={styles.value}>${subtotal.toFixed(2)}</Text></View>
+            <View style={styles.row}><Text style={styles.label}>Delivery Fee</Text><Text style={styles.value}>${deliveryFee.toFixed(2)}</Text></View>
+            <View style={styles.row}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>${total.toFixed(2)}</Text></View>
+            <Pressable style={styles.button} onPress={() => router.push("/checkout")}><Text style={styles.buttonText}>Proceed to Payment</Text></Pressable>
           </View>
-        </>
-      )}
-    </View>
+        ) : null}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-    padding: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  emptyWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    color: "#6B7280",
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  link: {
-    color: "#DC2626",
-    fontWeight: "700",
-  },
-  listContent: {
-    paddingBottom: 120,
-  },
-  instructionsCard: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  instructionsTitle: {
-    color: "#111827",
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  instructionsInput: {
-    minHeight: 72,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    textAlignVertical: "top",
-    color: "#111827",
-    backgroundColor: "#F9FAFB",
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  topLine: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  itemName: {
-    flex: 1,
-    color: "#111827",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  itemPrice: {
-    color: "#DC2626",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  meta: {
-    color: "#6B7280",
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  smallButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "#111827",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  smallButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-    lineHeight: 20,
-  },
-  removeButton: {
-    marginLeft: 8,
-    backgroundColor: "#FEE2E2",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  removeButtonText: {
-    color: "#B91C1C",
-    fontWeight: "700",
-  },
-  footer: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 16,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 12,
-  },
-  total: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 10,
-  },
-  addressLine: {
-    color: "#374151",
-    marginBottom: 10,
-    fontSize: 13,
-  },
-  activeOrderWarning: {
-    color: "#B91C1C",
-    fontSize: 12,
-    marginBottom: 10,
-    fontWeight: "600",
-  },
-  checkoutButton: {
-    backgroundColor: "#16A34A",
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  checkoutButtonDisabled: {
-    backgroundColor: "#9CA3AF",
-  },
-  checkoutText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  page: { flex: 1, backgroundColor: colors.surface },
+  shell: { flex: 1, margin: 0, borderRadius: 0, backgroundColor: colors.surface, overflow: "hidden" },
+  header: { height: ms(56), backgroundColor: colors.brand, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.md },
+  headerTitle: { color: colors.white, fontSize: type.h2, fontWeight: "900", letterSpacing: ms(-0.2) },
+  itemCard: { margin: spacing.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, flexDirection: "row", ...shadow.card },
+  image: { width: ms(64), height: ms(64), borderRadius: radius.md },
+  itemName: { fontSize: type.h3, fontWeight: "900", color: colors.text, letterSpacing: ms(-0.2) },
+  itemRestaurant: { marginTop: 2, fontSize: type.caption, color: colors.subtle, fontWeight: "700" },
+  itemPrice: { color: colors.success, fontSize: type.h3, fontWeight: "900", marginTop: spacing.xs },
+  qtyRow: { marginTop: spacing.sm, width: ms(124), borderRadius: radius.pill, backgroundColor: "#F3F4F6", flexDirection: "row", alignItems: "center", justifyContent: "space-around", paddingVertical: ms(6), borderWidth: 1, borderColor: colors.border },
+  qtyBtn: { fontSize: type.h3, color: colors.subtle, fontWeight: "900" },
+  qty: { fontSize: type.body, fontWeight: "900", color: colors.text },
+  empty: { flex: 1, alignItems: "center", justifyContent: "center" },
+  emptyText: { fontSize: type.body, color: colors.subtle, fontWeight: "700" },
+  footer: { marginTop: "auto", borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.card, padding: spacing.md },
+  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.xs },
+  label: { color: colors.muted, fontSize: type.bodySm, fontWeight: "600" },
+  value: { color: colors.muted, fontSize: type.bodySm, fontWeight: "700" },
+  totalLabel: { fontSize: type.h3, fontWeight: "900", color: colors.text },
+  totalValue: { fontSize: type.h3, fontWeight: "900", color: colors.text },
+  button: { marginTop: spacing.md, backgroundColor: colors.brand, borderRadius: radius.xl, alignItems: "center", paddingVertical: spacing.sm, ...shadow.card },
+  buttonText: { color: colors.white, fontSize: type.body, fontWeight: "900" },
 });
